@@ -4,7 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-// import BookList from "./pages/BookList";
+import BookList from "./pages/BookList";
 // import Cart from "./pages/Cart";
 
 function App() {
@@ -13,7 +13,7 @@ function App() {
             <AuthProvider>
                 <Routes>
                     <Route path="/" element={<Home />} />
-                    {/* <Route path="/books" element={<BookList />} /> */}
+                    <Route path="/books" element={<BookList />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route
