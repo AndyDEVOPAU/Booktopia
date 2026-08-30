@@ -3,6 +3,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import authRoutes from "./routes/authRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
+import bookRoutes from "./routes/bookRoutes.js";
 import connectDB from "./config/db.js";
 
 dotenv.config();
@@ -15,6 +17,8 @@ app.use(cookieParser());
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.use("/api/auth", authRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/books", bookRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });
