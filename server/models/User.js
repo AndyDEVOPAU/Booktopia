@@ -24,6 +24,12 @@ const userSchema = new Schema(
             select: false,
             minlength: 8,
         },
+
+        role: {
+            type: String,
+            enum: ["customer", "admin"],
+            default: "customer",
+        },
     },
     {
         timestamps: true,

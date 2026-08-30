@@ -72,7 +72,7 @@ export const login = async (req, res) => {
     res.cookie("token", token, cookieOptions);
     res.json({
       message: "Login successful",
-      user: { id: user._id, name: user.name, email: user.email },
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {
     console.error(error);
@@ -91,7 +91,7 @@ export const getMe = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json({ user: { id: user._id, name: user.name, email: user.email } });
+    res.json({ user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });

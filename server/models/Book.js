@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
+import mongoose, { Schema } from 'mongoose';
 
-const bookSchema = new mongoose.Schema(
+const bookSchema = new Schema(
   {
     title: {
       type: String,
@@ -42,9 +42,17 @@ const bookSchema = new mongoose.Schema(
       default: '',
     },
     category: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'Category',
       required: [true, 'Category is required'],
+    },
+    // Soft-delete flag: same reasoning as Category. Orders reference
+    // bookId, so hard-deleting a book would break historical order
+    // records. Archived books are hidden from catalog/search but
+    // existing Order/Review references stay valid.
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true }
@@ -52,4 +60,4 @@ const bookSchema = new mongoose.Schema(
 
 bookSchema.index({ title: 'text', author: 'text' });
 
-module.exports = mongoose.model('Book', bookSchema);
+export default mongoose.model('Book', bookSchema);
