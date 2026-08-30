@@ -15,4 +15,13 @@
     --secondary: #20795a;
     --accent: #1daf7a;
   }
-},
+}
+
+
+@theme {
+  --color-text: var(--text);
+  --color-background: var(--background);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+}
