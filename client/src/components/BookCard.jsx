@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 // Cycles through your 3 theme accent tokens so each category consistently
 // lands on the same "spine" color, like books grouped by color on a shelf.
@@ -15,14 +16,23 @@ function spineTokenFor(categoryName = "") {
 const LOW_STOCK_THRESHOLD = 5;
 
 export default function BookCard({ book, onSelect }) {
+  const navigate = useNavigate();
   const spineToken = spineTokenFor(book.category?.name);
   const isOutOfStock = book.stock === 0;
   const isLowStock = !isOutOfStock && book.stock <= LOW_STOCK_THRESHOLD;
 
+  const handleClick = () => {
+    if (onSelect) {
+      onSelect(book);
+    } else {
+      navigate(`/books/${book._id}`);
+    }
+  };
+
   return (
     <button
       type="button"
-      onClick={() => onSelect?.(book)}
+      onClick={handleClick}
       className="group relative flex flex-col overflow-hidden rounded-md bg-background text-left text-text shadow-sm ring-1 ring-text/10 transition-transform duration-200 hover:-translate-y-1 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       {/* Spine bar — signature element, colored per category */}
