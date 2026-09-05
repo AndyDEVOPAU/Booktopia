@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { addToCart, getCart } from "../utils/cartStorage";
+import api from "../api/axios";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const LOW_STOCK_THRESHOLD = 5;
 
 export default function BookDetail() {
@@ -18,25 +18,28 @@ export default function BookDetail() {
     setQuantity(1);
     setAddState("idle");
 
-    fetch(`${API_BASE}/api/books/${id}`, { credentials: "include" })
-      .then((res) => {
-        if (res.status === 404) {
-          setStatus("not-found");
-          return null;
-        }
-        if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        if (data) {
-          setBook(data);
-          setStatus("success");
-        }
+    let cancelled = false;
+
+    api
+      .get(`/books/${id}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setBook(data);
+        setStatus("success");
       })
       .catch((err) => {
-        console.error("Failed to load book:", err);
-        setStatus("error");
+        if (cancelled) return;
+        if (err.response?.status === 404) {
+          setStatus("not-found");
+        } else {
+          console.error("Failed to load book:", err);
+          setStatus("error");
+        }
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const isOutOfStock = book?.stock === 0;

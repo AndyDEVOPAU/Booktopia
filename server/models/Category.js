@@ -33,7 +33,7 @@ const categorySchema = new Schema(
 );
 
 // Auto-generate slug from name whenever name changes
-categorySchema.pre('save', function (next) {
+categorySchema.pre('save', function () {
   if (this.isModified('name')) {
     this.slug = this.name
       .toLowerCase()
@@ -41,7 +41,6 @@ categorySchema.pre('save', function (next) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
   }
-  next();
 });
 
 // Convenience query helper: Category.find().active()

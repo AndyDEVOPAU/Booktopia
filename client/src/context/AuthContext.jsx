@@ -10,23 +10,16 @@ export const AuthProvider = ({ children }) => {
         const controller = new AbortController();
 
         const fetchMe = async () => {
-            console.log("fetchMe started");
             try {
                 const { data } = await api.get("/auth/me", {
                     signal: controller.signal,
                 });
-                console.log("fetchMe succeeded");
                 setUser(data.user);
             } catch (err) {
-                console.log("fetchMe caught error:", err.code, err.message);
                 if (err.code !== "ERR_CANCELED") {
                     setUser(null);
                 }
             } finally {
-                console.log(
-                    "fetchMe finally, aborted:",
-                    controller.signal.aborted,
-                );
                 if (!controller.signal.aborted) {
                     setLoading(false);
                 }

@@ -57,7 +57,7 @@ export const createCategory = async (req, res) => {
     if (error.code === 11000) {
       return res.status(409).json({ message: "A category with this name already exists" });
     }
-    console.error("createCategory error:", error.name);
+    console.error("createCategory error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

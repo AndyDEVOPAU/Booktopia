@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
+import AdminLayout from "./components/admin/AdminLayout";
+import Container from "./components/common/Container";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -20,9 +22,9 @@ function App() {
         <BrowserRouter>
             <AuthProvider>
                 <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/books" element={<BookList />} />
-                    <Route path="/books/:id" element={<BookDetail />} />
+                    <Route path="/" element={<Container><Home /></Container>} />
+                    <Route path="/books" element={<Container><BookList /></Container>} />
+                    <Route path="/books/:id" element={<Container><BookDetail /></Container>} />
 
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
@@ -35,53 +37,20 @@ function App() {
                         }
                     />
                     <Route
-                        path="/admin/books"
+                        path="/admin"
                         element={
                             <AdminRoute>
-                                <AdminBookList />
+                                <AdminLayout />
                             </AdminRoute>
                         }
-                    />
-                    <Route
-                        path="/admin/books/new"
-                        element={
-                            <AdminRoute>
-                                <AdminBookForm />
-                            </AdminRoute>
-                        }
-                    />
-                    <Route
-                        path="/admin/books/:id/edit"
-                        element={
-                            <AdminRoute>
-                                <AdminBookForm />
-                            </AdminRoute>
-                        }
-                    />
-                    <Route
-                        path="/admin/categories"
-                        element={
-                            <AdminRoute>
-                                <AdminCategoryList />
-                            </AdminRoute>
-                        }
-                    />
-                    <Route
-                        path="/admin/categories/new"
-                        element={
-                            <AdminRoute>
-                                <AdminCategoryForm />
-                            </AdminRoute>
-                        }
-                    />
-                    <Route
-                        path="/admin/categories/:id/edit"
-                        element={
-                            <AdminRoute>
-                                <AdminCategoryForm />
-                            </AdminRoute>
-                        }
-                    />
+                    >
+                        <Route path="books" element={<AdminBookList />} />
+                        <Route path="books/new" element={<AdminBookForm />} />
+                        <Route path="books/:id/edit" element={<AdminBookForm />} />
+                        <Route path="categories" element={<AdminCategoryList />} />
+                        <Route path="categories/new" element={<AdminCategoryForm />} />
+                        <Route path="categories/:id/edit" element={<AdminCategoryForm />} />
+                    </Route>
                 </Routes>
             </AuthProvider>
         </BrowserRouter>

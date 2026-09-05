@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import BookCard from "../components/BookCard";
 import BookCardSkeleton from "../components/BookCardSkeleton";
 import BookFilters from "../components/BookFilters";
+import api from "../api/axios";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -42,36 +42,28 @@ export default function BookList() {
 
   // Load categories once for the filter dropdown.
   useEffect(() => {
-    fetch(`${API_BASE}/api/categories`)
-      .then((res) => res.json())
-      .then(setCategories)
+    api
+      .get("/categories")
+      .then(({ data }) => setCategories(data))
       .catch((err) => console.error("Failed to load categories:", err));
   }, []);
 
-  const buildQueryString = useCallback(() => {
-    const params = new URLSearchParams();
-    if (debouncedSearch) params.set("search", debouncedSearch);
-    if (category) params.set("category", category);
-    if (minPrice !== "") params.set("minPrice", minPrice);
-    if (maxPrice !== "") params.set("maxPrice", maxPrice);
-    if (sort) params.set("sort", sort);
-    params.set("page", page);
-    params.set("limit", PAGE_SIZE);
-    return params.toString();
+  const buildParams = useCallback(() => {
+    const params = {};
+    if (debouncedSearch) params.search = debouncedSearch;
+    if (category) params.category = category;
+    if (minPrice !== "") params.minPrice = minPrice;
+    if (maxPrice !== "") params.maxPrice = maxPrice;
+    if (sort) params.sort = sort;
+    params.page = page;
+    params.limit = PAGE_SIZE;
+    return params;
   }, [debouncedSearch, category, minPrice, maxPrice, sort, page]);
 
   const fetchBooks = useCallback(async () => {
     setStatus("loading");
     try {
-      const res = await fetch(`${API_BASE}/api/books?${buildQueryString()}`, {
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        throw new Error(`Request failed with status ${res.status}`);
-      }
-
-      const data = await res.json();
+      const { data } = await api.get("/books", { params: buildParams() });
       setBooks(data.books);
       setTotalPages(data.totalPages || 1);
       setTotalBooks(data.totalBooks || 0);
@@ -80,7 +72,7 @@ export default function BookList() {
       console.error("Failed to load books:", err);
       setStatus("error");
     }
-  }, [buildQueryString]);
+  }, [buildParams]);
 
   useEffect(() => {
     fetchBooks();
