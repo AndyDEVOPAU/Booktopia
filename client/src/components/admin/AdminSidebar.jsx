@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../context/useAuth";
 
 const NAV_ITEMS = [
   { to: "/admin/books", label: "Books" },
@@ -6,8 +7,11 @@ const NAV_ITEMS = [
 ];
 
 export default function AdminSidebar() {
+    const { logout } = useAuth();
+
+
   return (
-    <aside className="w-56 shrink-0 border-r border-text/10 bg-background px-4 py-8">
+    <aside className="flex h-screen flex-col w-56 shrink-0 border-r border-text/10 bg-background px-4 py-8">
       <p className="mb-6 px-2 text-[11px] uppercase tracking-[0.15em] text-text/50">
         Admin
       </p>
@@ -28,6 +32,14 @@ export default function AdminSidebar() {
           </NavLink>
         ))}
       </nav>
+
+      <button
+        type="button"
+        onClick={logout}
+        className="mt-auto rounded-md cursor-pointer bg-danger-light px-4 py-2 text-sm font-medium text-background hover:bg-danger-dark"
+      >
+        Log out
+      </button>
     </aside>
   );
 }

@@ -7,6 +7,8 @@
     --primary: #49b68e;
     --secondary: #86dfc0;
     --accent: #50e2ad;
+    --dangerLight: #e15554;
+    --dangerDark: #c23b3b;
   }
   .dark {
     --text: #f9fbfa;
@@ -14,6 +16,8 @@
     --primary: #49b68e;
     --secondary: #20795a;
     --accent: #1daf7a;
+    --dangerLight: #e15554;
+    --dangerDark: #c23b3b;
   }
 }
 
@@ -24,4 +28,6 @@
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
+  --color-danger-light: var(--dangerLight);
+  --color-danger-dark: var(--dangerDark);
 }
