@@ -33,7 +33,7 @@ export default function BookCard({ book, onSelect }) {
     <button
       type="button"
       onClick={handleClick}
-      className="group relative flex flex-col overflow-hidden rounded-md bg-background text-left text-text shadow-sm ring-1 ring-text/10 transition-transform duration-200 hover:-translate-y-1 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="group relative flex h-full w-full flex-col overflow-hidden rounded-md bg-background text-left text-text shadow-sm ring-1 ring-text/10 transition-transform duration-200 hover:-translate-y-1 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
     >
       {/* Spine bar — signature element, colored per category */}
       <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1.5 ${spineToken}`} />

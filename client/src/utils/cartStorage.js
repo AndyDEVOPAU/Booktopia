@@ -1,4 +1,5 @@
 const CART_KEY = "bookstore_cart";
+const CART_UPDATED_EVENT = "cartUpdated";
 
 // Cart shape in localStorage: an array of { bookId, quantity, addedAt }.
 // Deliberately NOT storing price/title/stock snapshots here — those can
@@ -19,9 +20,18 @@ export function getCart() {
 function saveCart(cart) {
   try {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    // Same-tab components (e.g. Navbar's cart badge) don't see the native
+    // "storage" event — that only fires in OTHER tabs. Dispatch our own
+    // so anything in this tab can react without polling.
+    window.dispatchEvent(new Event(CART_UPDATED_EVENT));
   } catch (err) {
     console.error("Failed to save cart to localStorage:", err);
   }
+}
+
+export function onCartUpdated(callback) {
+  window.addEventListener(CART_UPDATED_EVENT, callback);
+  return () => window.removeEventListener(CART_UPDATED_EVENT, callback);
 }
 
 // Adds `quantity` of a book to the cart, or increments if it's already

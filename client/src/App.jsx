@@ -3,6 +3,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import AdminLayout from "./components/admin/AdminLayout";
+import PublicLayout from "./components/PublicLayout";
 import Container from "./components/common/Container";
 
 import Home from "./pages/Home";
@@ -22,20 +23,23 @@ function App() {
         <BrowserRouter>
             <AuthProvider>
                 <Routes>
-                    <Route path="/" element={<Container><Home /></Container>} />
-                    <Route path="/books" element={<Container><BookList /></Container>} />
-                    <Route path="/books/:id" element={<Container><BookDetail /></Container>} />
+                    <Route element={<PublicLayout />}>
+                         <Route path="/" element={<Container><Home /></Container>} />
+                        <Route path="/books" element={<Container><BookList /></Container>} />
+                        <Route path="/books/:id" element={<Container><BookDetail /></Container>} />
 
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route
-                        path="/cart"
-                        element={
-                            <ProtectedRoute>
-                                {/* <Cart /> */}
-                            </ProtectedRoute>
-                        }
-                    />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route
+                            path="/cart"
+                            element={
+                                <ProtectedRoute>
+                                    {/* <Cart /> */}
+                                </ProtectedRoute>
+                            }
+                        />
+                    </Route>
+                   
                     <Route
                         path="/admin"
                         element={

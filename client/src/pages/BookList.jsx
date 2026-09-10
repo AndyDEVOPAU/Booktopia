@@ -1,13 +1,16 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import BookCard from "../components/BookCard";
 import BookCardSkeleton from "../components/BookCardSkeleton";
 import BookFilters from "../components/BookFilters";
-import api from "../api/axios";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 400;
 
 export default function BookList() {
+  const [urlParams] = useSearchParams();
+
   const [books, setBooks] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -22,6 +25,19 @@ export default function BookList() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [sort, setSort] = useState("newest");
+
+  // Picks up ?search= or ?category= from the URL — needed because the
+  // navbar search box and the homepage's category tiles both navigate
+  // here with query params rather than setting this component's state
+  // directly. Re-runs whenever the URL changes (not just on mount), so
+  // searching again from the navbar while already on this page still
+  // updates the filters instead of being ignored.
+  useEffect(() => {
+    const urlSearch = urlParams.get("search") || "";
+    const urlCategory = urlParams.get("category") || "";
+    setSearchInput(urlSearch);
+    setCategory(urlCategory);
+  }, [urlParams]);
 
   // Debounced search — only this triggers a fetch, so typing doesn't fire
   // a request on every keystroke.
@@ -42,28 +58,36 @@ export default function BookList() {
 
   // Load categories once for the filter dropdown.
   useEffect(() => {
-    api
-      .get("/categories")
-      .then(({ data }) => setCategories(data))
+    fetch(`${API_BASE}/api/categories`)
+      .then((res) => res.json())
+      .then(setCategories)
       .catch((err) => console.error("Failed to load categories:", err));
   }, []);
 
-  const buildParams = useCallback(() => {
-    const params = {};
-    if (debouncedSearch) params.search = debouncedSearch;
-    if (category) params.category = category;
-    if (minPrice !== "") params.minPrice = minPrice;
-    if (maxPrice !== "") params.maxPrice = maxPrice;
-    if (sort) params.sort = sort;
-    params.page = page;
-    params.limit = PAGE_SIZE;
-    return params;
+  const buildQueryString = useCallback(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (category) params.set("category", category);
+    if (minPrice !== "") params.set("minPrice", minPrice);
+    if (maxPrice !== "") params.set("maxPrice", maxPrice);
+    if (sort) params.set("sort", sort);
+    params.set("page", page);
+    params.set("limit", PAGE_SIZE);
+    return params.toString();
   }, [debouncedSearch, category, minPrice, maxPrice, sort, page]);
 
   const fetchBooks = useCallback(async () => {
     setStatus("loading");
     try {
-      const { data } = await api.get("/books", { params: buildParams() });
+      const res = await fetch(`${API_BASE}/api/books?${buildQueryString()}`, {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error(`Request failed with status ${res.status}`);
+      }
+
+      const data = await res.json();
       setBooks(data.books);
       setTotalPages(data.totalPages || 1);
       setTotalBooks(data.totalBooks || 0);
@@ -72,7 +96,7 @@ export default function BookList() {
       console.error("Failed to load books:", err);
       setStatus("error");
     }
-  }, [buildParams]);
+  }, [buildQueryString]);
 
   useEffect(() => {
     fetchBooks();
