@@ -18,12 +18,12 @@ export default function SearchBar({ className = "" }) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Search by title or author..."
-        className="w-full rounded-l-md border border-text/15 bg-background px-3 py-2 text-sm text-text placeholder:text-text/40 focus:outline-none focus:ring-2 focus:ring-primary"
+        className="w-full rounded-l-md border border-text/15 bg-background px-3 py-2 text-sm text-text placeholder:text-text/40 focus:outline-none"
       />
       <button
         type="submit"
         aria-label="Search"
-        className="rounded-r-md border border-l-0 border-text/15 bg-primary px-3 text-background hover:bg-secondary"
+        className="rounded-r-md border border-l-0 border-text/15 bg-primary px-3 text-background hover:bg-secondary cursor-pointer"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

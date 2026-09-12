@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { getCartCount, onCartUpdated } from "../utils/cartStorage";
+import SearchBar from "./SearchBar";
 
 const linkClass = ({ isActive }) =>
   `text-sm font-medium transition-colors ${
@@ -27,9 +28,12 @@ export default function Navbar() {
   return (
     <header className="border-b border-text/10 bg-background">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8">
-        <NavLink to="/" className="text-lg font-semibold text-text">
+        <NavLink to="/" className="text-xl font-semibold  text-primary">
           Booktopia
         </NavLink>
+
+        <SearchBar className="w-full sm:max-w-md" />
+
 
         <nav className="flex items-center gap-6">
           <NavLink to="/books" className={linkClass}>
