@@ -1,64 +1,70 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { addToCart, getCart } from "../utils/cartStorage";
-import api from "../api/axios";
+import { useCart } from "../context/useCart";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const LOW_STOCK_THRESHOLD = 5;
 
 export default function BookDetail() {
   const { id } = useParams();
+  const { cart, addItem } = useCart();
 
   const [book, setBook] = useState(null);
   const [status, setStatus] = useState("loading"); // 'loading' | 'success' | 'error' | 'not-found'
   const [quantity, setQuantity] = useState(1);
-  const [addState, setAddState] = useState("idle"); // 'idle' | 'added'
+  const [addState, setAddState] = useState("idle"); // 'idle' | 'adding' | 'added' | 'error'
+  const [addError, setAddError] = useState("");
 
   useEffect(() => {
     setStatus("loading");
     setQuantity(1);
     setAddState("idle");
+    setAddError("");
 
-    let cancelled = false;
-
-    api
-      .get(`/books/${id}`)
-      .then(({ data }) => {
-        if (cancelled) return;
-        setBook(data);
-        setStatus("success");
+    fetch(`${API_BASE}/api/books/${id}`, { credentials: "include" })
+      .then((res) => {
+        if (res.status === 404) {
+          setStatus("not-found");
+          return null;
+        }
+        if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        if (data) {
+          setBook(data);
+          setStatus("success");
+        }
       })
       .catch((err) => {
-        if (cancelled) return;
-        if (err.response?.status === 404) {
-          setStatus("not-found");
-        } else {
-          console.error("Failed to load book:", err);
-          setStatus("error");
-        }
+        console.error("Failed to load book:", err);
+        setStatus("error");
       });
-
-    return () => {
-      cancelled = true;
-    };
   }, [id]);
 
   const isOutOfStock = book?.stock === 0;
   const isLowStock = book && !isOutOfStock && book.stock <= LOW_STOCK_THRESHOLD;
 
-  // How many of this book are already sitting in the cart, so we can cap
-  // the quantity selector at what's actually left — the "hard cap" option
-  // we discussed but hadn't committed to. Doing it here since it's cheap
-  // and prevents an easily-avoidable trip to the checkout-page error state.
+  // How many of this book are already in the (real, backend) cart, so the
+  // quantity selector can be capped at what's actually left to add.
   const alreadyInCart = book
-    ? getCart().find((item) => item.bookId === book._id)?.quantity || 0
+    ? cart.items.find((item) => item.book?._id === book._id)?.quantity || 0
     : 0;
   const maxSelectable = book ? Math.max(0, book.stock - alreadyInCart) : 0;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!book || quantity < 1 || quantity > maxSelectable) return;
-    addToCart(book._id, quantity);
-    setAddState("added");
-    setTimeout(() => setAddState("idle"), 2000);
+    setAddState("adding");
+    setAddError("");
+    try {
+      await addItem(book._id, quantity);
+      setAddState("added");
+      setTimeout(() => setAddState("idle"), 2000);
+    } catch (err) {
+      console.error("Failed to add to cart:", err);
+      setAddError(err.response?.data?.message || "Couldn't add that to your cart.");
+      setAddState("error");
+    }
   };
 
   if (status === "loading") {
@@ -164,6 +170,10 @@ export default function BookDetail() {
               </p>
             )}
 
+            {addError && (
+              <p className="rounded-md bg-accent/10 px-3 py-2 text-sm text-text">{addError}</p>
+            )}
+
             <div className="mt-2 flex items-center gap-3">
               {!isOutOfStock && maxSelectable > 0 && (
                 <select
@@ -182,11 +192,13 @@ export default function BookDetail() {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={isOutOfStock || maxSelectable === 0}
+                disabled={isOutOfStock || maxSelectable === 0 || addState === "adding"}
                 className="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-background transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isOutOfStock
                   ? "Out of stock"
+                  : addState === "adding"
+                  ? "Adding..."
                   : addState === "added"
                   ? "Added ✓"
                   : maxSelectable === 0
