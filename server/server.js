@@ -5,6 +5,9 @@ import dotenv from 'dotenv';
 import authRoutes from "./routes/authRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import bookRoutes from "./routes/bookRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import { handleStripeWebhook } from "./controllers/orderController.js";
 import connectDB from "./config/db.js";
 
 dotenv.config();
@@ -12,6 +15,17 @@ console.log("CLIENT_URL:", process.env.CLIENT_URL);
 const app = express();
 
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+
+// IMPORTANT: the Stripe webhook needs the RAW request body to verify the
+// signature — it must be registered BEFORE express.json() below, and with
+// its own express.raw() parser, or signature verification will fail.
+// This route is deliberately NOT part of orderRoutes.js for that reason.
+app.post(
+  "/api/orders/webhook",
+  express.raw({ type: "application/json" }),
+  handleStripeWebhook
+);
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -19,26 +33,28 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/books", bookRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
 
 app.use((req, res) => {
-  res.status(404).json({ error: "Not found" });
+res.status(404).json({ error: "Not found" });
 });
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({ error: err.message || "Server error" });
+console.error(err.stack);
+res.status(err.status || 500).json({ error: err.message || "Server error" });
 });
 
 const PORT = process.env.PORT || 3001;
 
 const startServer = async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+await connectDB();
+app.listen(PORT, () => {
+console.log(`Server running on port ${PORT}`);
   });
 };
 
 startServer().catch((err) => {
-  console.error("Failed to start server:", err);
-  process.exit(1);
+console.error("Failed to start server:", err);
+process.exit(1);
 });

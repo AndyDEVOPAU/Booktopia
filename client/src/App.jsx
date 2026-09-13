@@ -11,19 +11,17 @@ import Register from "./pages/Register";
 import BookList from "./pages/BookList";
 import BookDetail from "./pages/BookDetail";
 import CartPage from "./pages/CartPage";
+import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
 import AdminBookList from "./pages/admin/AdminBookList";
 import AdminBookForm from "./pages/admin/AdminBookForm";
 import AdminCategoryList from "./pages/admin/AdminCategoryList";
 import AdminCategoryForm from "./pages/admin/AdminCategoryForm";
-// import Checkout from "./pages/Checkout"; // Milestone 3, Day 12
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        {/* CartProvider needs to be inside AuthProvider (it reads useAuth()
-            to know when to re-fetch after login/logout) and outside Routes
-            (Navbar's cart badge needs it on every page, not just /cart). */}
         <CartProvider>
           <Routes>
             {/* Public site — everything under here gets the Navbar/Footer */}
@@ -34,23 +32,29 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
-              {/* Cart is NOT behind ProtectedRoute — guests get a cart too,
-                  via the backend's anonymous session-cookie cart. Only
-                  checkout (Milestone 3, Day 12) requires login. */}
+              {/* Guests get a cart too (backend anonymous session cart) */}
               <Route path="/cart" element={<CartPage />} />
 
+              {/* Checkout requires login — the actual gate we designed */}
               <Route
                 path="/checkout"
                 element={
                   <ProtectedRoute>
-                    {/* <Checkout /> */}
+                    <Checkout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/order-confirmation/:id"
+                element={
+                  <ProtectedRoute>
+                    <OrderConfirmation />
                   </ProtectedRoute>
                 }
               />
             </Route>
 
-            {/* Admin — everything under here gets the AdminSidebar via AdminLayout,
-                and is gated by AdminRoute at the parent level. */}
+            {/* Admin — nested under AdminLayout for the sidebar, gated by AdminRoute */}
             <Route
               element={
                 <AdminRoute>
