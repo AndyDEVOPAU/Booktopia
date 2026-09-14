@@ -13,10 +13,13 @@ import BookDetail from "./pages/BookDetail";
 import CartPage from "./pages/CartPage";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import OrderHistory from "./pages/OrderHistory";
+import OrderDetail from "./pages/OrderDetail";
 import AdminBookList from "./pages/admin/AdminBookList";
 import AdminBookForm from "./pages/admin/AdminBookForm";
 import AdminCategoryList from "./pages/admin/AdminCategoryList";
 import AdminCategoryForm from "./pages/admin/AdminCategoryForm";
+import AdminOrderList from "./pages/admin/AdminOrderList";
 
 function App() {
   return (
@@ -35,7 +38,7 @@ function App() {
               {/* Guests get a cart too (backend anonymous session cart) */}
               <Route path="/cart" element={<CartPage />} />
 
-              {/* Checkout requires login — the actual gate we designed */}
+              {/* Checkout and order history require login */}
               <Route
                 path="/checkout"
                 element={
@@ -49,6 +52,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <OrderConfirmation />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <OrderHistory />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders/:id"
+                element={
+                  <ProtectedRoute>
+                    <OrderDetail />
                   </ProtectedRoute>
                 }
               />
@@ -68,6 +87,7 @@ function App() {
               <Route path="/admin/categories" element={<AdminCategoryList />} />
               <Route path="/admin/categories/new" element={<AdminCategoryForm />} />
               <Route path="/admin/categories/:id/edit" element={<AdminCategoryForm />} />
+              <Route path="/admin/orders" element={<AdminOrderList />} />
             </Route>
           </Routes>
         </CartProvider>

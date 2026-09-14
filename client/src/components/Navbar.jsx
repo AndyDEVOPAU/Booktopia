@@ -1,4 +1,3 @@
-import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { useCart } from "../context/useCart";
@@ -33,6 +32,9 @@ export default function Navbar() {
           {user ? (
             <>
               <span className="text-sm text-text/60">Hi, {user.name}</span>
+              <NavLink to="/orders" className={linkClass}>
+                Orders
+              </NavLink>
               <button
                 type="button"
                 onClick={handleLogout}

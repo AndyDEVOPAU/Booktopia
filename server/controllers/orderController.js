@@ -193,10 +193,14 @@ async function finalizeOrderFromPaymentIntent(paymentIntent) {
 }
 
 // GET /api/orders
-// Protected. Current user's order history.
+// Protected. Current user's order history. Populates live coverImage/author
+// from the book (safe — we're not touching the snapshotted title/price,
+// just enriching the display; a book's cover/author rarely change anyway).
 export const getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user.userId }).sort({ createdAt: -1 });
+    const orders = await Order.find({ user: req.user.userId })
+      .populate("items.book", "coverImage author")
+      .sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
     console.error("getMyOrders error:", error.name);
@@ -209,7 +213,10 @@ export const getMyOrders = async (req, res) => {
 // another's order by guessing an id.
 export const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findOne({ _id: req.params.id, user: req.user.userId });
+    const order = await Order.findOne({
+      _id: req.params.id,
+      user: req.user.userId,
+    }).populate("items.book", "coverImage author");
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -219,6 +226,68 @@ export const getOrderById = async (req, res) => {
       return res.status(400).json({ message: "Invalid order id" });
     }
     console.error("getOrderById error:", error.name);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// GET /api/orders/admin
+// Admin only. All orders across all customers, newest first.
+// Supports optional ?status= (payment status) and ?fulfillmentStatus=
+// filters for the admin order-list view.
+export const getAllOrders = async (req, res) => {
+  try {
+    const { status, fulfillmentStatus } = req.query;
+    const filter = {};
+    if (status) filter.status = status;
+    if (fulfillmentStatus) filter.fulfillmentStatus = fulfillmentStatus;
+
+    const orders = await Order.find(filter)
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (error) {
+    console.error("getAllOrders error:", error.name);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// PATCH /api/orders/admin/:id/status
+// Admin only. Updates fulfillmentStatus — NOT payment status, which is
+// only ever set by the Stripe webhook. body: { fulfillmentStatus }
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { fulfillmentStatus } = req.body;
+    const validValues = ["processing", "shipped", "delivered"];
+
+    if (!validValues.includes(fulfillmentStatus)) {
+      return res.status(400).json({
+        message: `fulfillmentStatus must be one of: ${validValues.join(", ")}`,
+      });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Nothing to fulfill on an order that was never actually paid for —
+    // block this rather than letting an admin mark an unpaid order "shipped".
+    if (order.status !== "paid") {
+      return res.status(409).json({
+        message: "Only paid orders can have their fulfillment status updated",
+      });
+    }
+
+    order.fulfillmentStatus = fulfillmentStatus;
+    await order.save();
+
+    res.json(order);
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({ message: "Invalid order id" });
+    }
+    console.error("updateOrderStatus error:", error.name);
     res.status(500).json({ message: "Server error" });
   }
 };

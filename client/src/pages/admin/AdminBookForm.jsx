@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/axios";
+import { uploadImageToCloudinary } from "../../utils/uploadToCloudinary";
 
 const EMPTY_FORM = {
   title: "",
@@ -13,16 +14,23 @@ const EMPTY_FORM = {
   category: "",
 };
 
+const inputClass =
+  "rounded-md border border-text/15 bg-background px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary";
+
 export default function AdminBookForm() {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     api
@@ -57,6 +65,29 @@ export default function AdminBookForm() {
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError("");
+    setUploading(true);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      setForm((prev) => ({ ...prev, coverImage: url }));
+    } catch (err) {
+      console.error("Cover upload failed:", err);
+      setUploadError(err.message || "Upload failed. Try a different image.");
+    } finally {
+      setUploading(false);
+      // Reset the input so selecting the same file again still fires onChange
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveCover = () => {
+    setForm((prev) => ({ ...prev, coverImage: "" }));
   };
 
   const handleSubmit = async (e) => {
@@ -112,7 +143,7 @@ export default function AdminBookForm() {
               required
               value={form.title}
               onChange={handleChange("title")}
-              className="rounded-md border border-text/15 bg-background px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary"
+              className={inputClass}
             />
           </Field>
 
@@ -122,7 +153,7 @@ export default function AdminBookForm() {
               required
               value={form.author}
               onChange={handleChange("author")}
-              className="rounded-md border border-text/15 bg-background px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary"
+              className={inputClass}
             />
           </Field>
 
@@ -132,7 +163,7 @@ export default function AdminBookForm() {
               required
               value={form.isbn}
               onChange={handleChange("isbn")}
-              className="rounded-md border border-text/15 bg-background px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary"
+              className={inputClass}
             />
           </Field>
 
@@ -145,7 +176,7 @@ export default function AdminBookForm() {
                 required
                 value={form.price}
                 onChange={handleChange("price")}
-                className="rounded-md border border-text/15 bg-background px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                className={inputClass}
               />
             </Field>
             <Field label="Stock" required className="flex-1">
@@ -155,7 +186,7 @@ export default function AdminBookForm() {
                 required
                 value={form.stock}
                 onChange={handleChange("stock")}
-                className="rounded-md border border-text/15 bg-background px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary"
+                className={inputClass}
               />
             </Field>
           </div>
@@ -165,7 +196,7 @@ export default function AdminBookForm() {
               required
               value={form.category}
               onChange={handleChange("category")}
-              className="rounded-md border border-text/15 bg-background px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary"
+              className={inputClass}
             >
               <option value="" disabled>
                 Select a category
@@ -178,14 +209,44 @@ export default function AdminBookForm() {
             </select>
           </Field>
 
-          <Field label="Cover image URL">
-            <input
-              type="url"
-              placeholder="https://res.cloudinary.com/..."
-              value={form.coverImage}
-              onChange={handleChange("coverImage")}
-              className="rounded-md border border-text/15 bg-background px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+          <Field label="Cover Image">
+            <div className="flex items-start gap-4">
+              <div className="h-28 w-20 shrink-0 overflow-hidden rounded-sm bg-primary/10">
+                {form.coverImage ? (
+                  <img
+                    src={form.coverImage}
+                    alt="Cover preview"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[10px] text-text/40">
+                    No cover
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  disabled={uploading}
+                  className="text-sm text-text/70 file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-background hover:file:bg-secondary"
+                />
+                {uploading && <p className="text-xs text-text/50">Uploading...</p>}
+                {uploadError && <p className="text-xs text-accent">{uploadError}</p>}
+                {form.coverImage && !uploading && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveCover}
+                    className="text-left text-xs text-text/60 hover:underline"
+                  >
+                    Remove cover
+                  </button>
+                )}
+              </div>
+            </div>
           </Field>
 
           <Field label="Description">
@@ -193,14 +254,14 @@ export default function AdminBookForm() {
               rows={4}
               value={form.description}
               onChange={handleChange("description")}
-              className="rounded-md border border-text/15 bg-background px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              className={`${inputClass} resize-none`}
             />
           </Field>
 
           <div className="mt-2 flex gap-3">
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || uploading}
               className="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-background hover:bg-secondary disabled:opacity-50"
             >
               {saving ? "Saving..." : isEditMode ? "Save Changes" : "Create Book"}

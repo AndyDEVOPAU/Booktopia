@@ -42,6 +42,17 @@ const orderSchema = new Schema(
       default: "pending",
     },
 
+    // Separate from payment `status` on purpose — this tracks fulfillment
+    // (packing/shipping), a different concern from whether payment went
+    // through. Only meaningful once status === "paid"; a pending/failed
+    // order has nothing to fulfill yet, so the admin UI should only offer
+    // this control for paid orders.
+    fulfillmentStatus: {
+      type: String,
+      enum: ["processing", "shipped", "delivered"],
+      default: "processing",
+    },
+
     stripePaymentIntentId: { type: String },
 
     // Populated only in the rare case where an item's atomic stock
