@@ -1,6 +1,7 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import isAdmin from "../middleware/isAdmin.js";
+import reviewRoutes from "./reviewRoutes.js";
 import {
   getBooks,
   getArchivedBooks,
@@ -20,6 +21,11 @@ router.get("/", getBooks);
 router.get("/archived", authMiddleware, isAdmin, getArchivedBooks);
 
 router.get("/:id", getBookById);
+
+// Reviews, nested under a specific book — GET is public, POST requires
+// login. Mounted here (not as its own top-level /api/reviews route) since
+// reviews only ever make sense in the context of a specific book.
+router.use("/:id/reviews", reviewRoutes);
 
 // Admin only
 router.post("/", authMiddleware, isAdmin, createBook);

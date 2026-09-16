@@ -4,6 +4,7 @@ import { useAuth } from "../../context/useAuth";
 const NAV_ITEMS = [
   { to: "/admin/books", label: "Books" },
   { to: "/admin/categories", label: "Categories" },
+  { to: "/admin/orders", label: "Orders" },
 ];
 
 export default function AdminSidebar() {

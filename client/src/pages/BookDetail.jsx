@@ -1,6 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useCart } from "../context/useCart";
+import { useAuth } from "../context/useAuth";
+import api from "../api/axios";
+import StarRating from "../components/reviews/StarRating";
+import ReviewForm from "../components/reviews/ReviewForm";
+import ReviewList from "../components/reviews/ReviewList";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const LOW_STOCK_THRESHOLD = 5;
@@ -8,12 +13,18 @@ const LOW_STOCK_THRESHOLD = 5;
 export default function BookDetail() {
   const { id } = useParams();
   const { cart, addItem } = useCart();
+  const { user } = useAuth();
 
   const [book, setBook] = useState(null);
   const [status, setStatus] = useState("loading"); // 'loading' | 'success' | 'error' | 'not-found'
   const [quantity, setQuantity] = useState(1);
   const [addState, setAddState] = useState("idle"); // 'idle' | 'adding' | 'added' | 'error'
   const [addError, setAddError] = useState("");
+
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState("");
 
   useEffect(() => {
     setStatus("loading");
@@ -42,11 +53,26 @@ export default function BookDetail() {
       });
   }, [id]);
 
+  const fetchReviews = useCallback(() => {
+    api
+      .get(`/books/${id}/reviews`)
+      .then(({ data }) => {
+        setReviews(data);
+        setReviewsLoaded(true);
+      })
+      .catch((err) => {
+        console.error("Failed to load reviews:", err);
+        setReviewsLoaded(true); // don't block the page over reviews failing
+      });
+  }, [id]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
+
   const isOutOfStock = book?.stock === 0;
   const isLowStock = book && !isOutOfStock && book.stock <= LOW_STOCK_THRESHOLD;
 
-  // How many of this book are already in the (real, backend) cart, so the
-  // quantity selector can be capped at what's actually left to add.
   const alreadyInCart = book
     ? cart.items.find((item) => item.book?._id === book._id)?.quantity || 0
     : 0;
@@ -64,6 +90,34 @@ export default function BookDetail() {
       console.error("Failed to add to cart:", err);
       setAddError(err.response?.data?.message || "Couldn't add that to your cart.");
       setAddState("error");
+    }
+  };
+
+  // Computed client-side from the same review list the page already
+  // fetches to display — avoids a separate backend aggregation endpoint
+  // for something this cheap to derive from data we have anyway.
+  const reviewCount = reviews.length;
+  const averageRating =
+    reviewCount > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount : 0;
+
+  const myReview = user
+    ? reviews.find((r) => String(r.user?._id) === String(user.id))
+    : null;
+
+  const handleReviewSubmit = async (rating, comment) => {
+    setReviewSubmitting(true);
+    setReviewError("");
+    try {
+      await api.post(`/books/${id}/reviews`, { rating, comment });
+      fetchReviews(); // re-fetch rather than optimistically append, so the
+                       // average and "already reviewed" state stay accurate
+    } catch (err) {
+      console.error("Failed to submit review:", err);
+      setReviewError(
+        err.response?.data?.message || "Couldn't submit your review. Try again."
+      );
+    } finally {
+      setReviewSubmitting(false);
     }
   };
 
@@ -160,6 +214,15 @@ export default function BookDetail() {
             <h1 className="text-3xl font-semibold leading-tight text-text">{book.title}</h1>
             <p className="text-base text-text/70">by {book.author}</p>
 
+            {reviewsLoaded && reviewCount > 0 && (
+              <div className="flex items-center gap-2">
+                <StarRating rating={averageRating} />
+                <span className="text-sm text-text/60">
+                  {averageRating.toFixed(1)} ({reviewCount} {reviewCount === 1 ? "review" : "reviews"})
+                </span>
+              </div>
+            )}
+
             <p className="font-mono text-2xl font-medium text-text">
               ${book.price?.toFixed(2)}
             </p>
@@ -213,6 +276,43 @@ export default function BookDetail() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* Reviews */}
+        <div className="mt-12 border-t border-text/10 pt-8">
+          <h2 className="mb-4 text-xl font-semibold text-text">Reviews</h2>
+
+          {!user && (
+            <p className="mb-6 text-sm text-text/60">
+              <Link to="/login" className="text-primary hover:underline">
+                Log in
+              </Link>{" "}
+              to leave a review after your order is delivered.
+            </p>
+          )}
+
+          {user && myReview && (
+            <div className="mb-6 flex items-center gap-2 rounded-md border border-text/10 bg-primary/5 px-3 py-2 text-sm text-text/70">
+              <StarRating rating={myReview.rating} size="text-sm" />
+              <span>You've already reviewed this book.</span>
+            </div>
+          )}
+
+          {user && !myReview && (
+            <div className="mb-6">
+              <ReviewForm
+                onSubmit={handleReviewSubmit}
+                submitting={reviewSubmitting}
+                error={reviewError}
+              />
+            </div>
+          )}
+
+          {reviewsLoaded ? (
+            <ReviewList reviews={reviews} />
+          ) : (
+            <p className="text-sm text-text/60">Loading reviews...</p>
+          )}
         </div>
       </div>
     </div>
